@@ -5,10 +5,10 @@ import lombok.ToString;
 @NoArgsConstructor
 @Getter
 public class CuckooHashing {
-    private static final int CAPACITY = 10;
+
+    private static final int CAPACITY = 100;
 
     private Node[] table1 = new Node[CAPACITY];
-    /*private Node[] table2 = new Node[CAPACITY];*/
 
     public void add(int value) {
         int index1 = hash1(value);
@@ -18,27 +18,10 @@ public class CuckooHashing {
             table1[index1] = node;
         } else if (table1[index2] == null) {
             table1[index2] = node;
-        } else {
-            Node tmp = table1[index1];
-            table1[index1] = node;
-            int i = hash2(tmp.value);
-            if (table1[i] == null) {
-                table1[i] = tmp;
-            } else {
-                node = tmp;
-                tmp = table1[i];
-                table1[i] = node;
-                int i2 = hash2(tmp.value);
-                if (i2 == i) {
-                    Node iterator = table1[i2];
-                    while (iterator.next != null) {
-                        iterator = iterator.next;
-                    }
-                    iterator.next = tmp;
-                    tmp.prev = iterator;
-                } else {
-//                    table1[i2] = tmp;
-                    add(tmp.value);
+        } else{
+            for (; index2 < table1.length; index2++){
+                if(table1[index2] == null){
+                    table1[index2] = node;
                 }
             }
         }
@@ -48,27 +31,16 @@ public class CuckooHashing {
         int index1 = hash1(value);
         int index2 = hash2(value);
         Node iterator = null;
-        if (table1[index1].value == value) {
-            if (table1[index1].next != null) {
-                table1[index1] = table1[index1].next;
-            } else {
-                table1[index1] = null;
-            }
-
-        } else if (table1[index2].value == value) {
-            if (table1[index2].next != null) {
-                table1[index2] = table1[index2].next;
-            } else {
-                table1[index2] = null;
-            }
-
-        } else {
-            iterator = table1[index2];
-            while (iterator != null) {
-                if (iterator.value == value) {
-                    unlink(index2, iterator);
+        if(table1[index1].value == value){
+            table1[index1] = null;
+        }else if(table1[index2].value == value){
+            table1[index2] = null;
+        }else{
+            for (; index2 <table1.length; index2++){
+                if(table1[index2].value == value){
+                    table1[index2] = null;
+                    break;
                 }
-                iterator = iterator.next;
             }
         }
     }
@@ -81,27 +53,14 @@ public class CuckooHashing {
             return true;
         }else if(table1[index2].value == value){
             return true;
-        }else{
-            iterator = table1[index2];
-            while(iterator != null){
-                if(iterator.value == value){
+        }else {
+            for (; index2 <table1.length; index2++){
+                if(table1[index2].value == value){
                     return true;
                 }
-                iterator = iterator.next;
             }
         }
         return false;
-    }
-
-    private void unlink(int index, Node iterator) {
-        if (iterator.prev == null) {
-            table1[index] = iterator.next;
-        } else if (iterator.next == null) {
-            iterator.prev.next = null;
-        } else {
-            iterator.prev.next = iterator.next;
-            iterator.next.prev = iterator.prev;
-        }
     }
 
 
@@ -121,9 +80,6 @@ public class CuckooHashing {
     @NoArgsConstructor
     public static class Node {
         private int value;
-        private Node next;
-        @ToString.Exclude
-        private Node prev;
 
         public Node(int value) {
             this.value = value;
